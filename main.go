@@ -3,9 +3,9 @@ nmod provides support for operations on submodules.
 
 Usage: nmod <command> [args...]
 
-NOTE: nmod is built to be run at the root of the repository it is operating on.
-It does NOT query for modules - it just scans directories in a straight line
-above, and recursively below, the working directory.
+NOTE: nmod is built to be run at the root of a repository. It does NOT query
+for modules - it just scans directories in a straight line above, and
+recursively below, the working directory.
 
 The commands are:
 	modules			print the modules of the given dirs
@@ -49,9 +49,9 @@ import (
 func usage() {
 	fmt.Fprintf(os.Stderr, `Usage: nmod <command> [args...]
 
-NOTE: nmod is built to be run at the root of the repository it is operating on.
-It does NOT query for modules - it just scans directories in a straight line
-above, and recursively below, the working directory.
+NOTE: nmod is built to be run at the root of a repository. It does NOT query
+for modules - it just scans directories in a straight line above, and
+recursively below, the working directory.
 
 The commands are:
 	modules			print the modules of the given dirs
@@ -104,7 +104,7 @@ func nmod(cmd string, args []string) error {
 	switch cmd {
 	case "modules":
 		return errors.New("modules unimplemented")
-	case "dir":
+	case "rootdirs":
 		return errors.New("dir unimplemented")
 	case "dirs":
 		return errors.New("dirs unimplemented")
@@ -118,9 +118,5 @@ func nmod(cmd string, args []string) error {
 }
 
 func modules() {
-
-}
-
-func findProjectRoot() {
 
 }
