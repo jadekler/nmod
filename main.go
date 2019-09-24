@@ -16,31 +16,28 @@ modules:
 	nmod modules [dirs...]
 
 modules prints the modules of the dirs if they're supplied. Dirs may be supplied
-as space separated arguments or as STDIN. If no dirs are supplied, modules
-prints the module of the current directory (if it exists) and all modules in
-directories recursively below the current directory.
+as space separated arguments. If no dirs are supplied, modules prints the module
+of the current directory (if it exists) and all modules in directories
+recursively below the current directory.
 
 rootdirs:
 	mmod rootdirs [modules...]
 
 rootdirs prints the root directories of the given modules. Modules may be
-supplied as space separated arguments or as STDIN. If no modules are supplied,
-rootdirs prints the root directory of the module of the current directory (if
-it exists).
+supplied as space separated arguments. If no modules are supplied, rootdirs
+prints the root directory of the module of the current directory (if it exists).
 
 dirs:
 	mmod dirs [modules...]
 
 dirs prints the directories belonging to the given modules. Modules may be
-supplied as space separated arguments or as STDIN. If no modules are supplied,
-dirs prints the root directory of the module of the current directory (if
-it exists).
+supplied as space separated arguments. If no modules are supplied, dirs prints
+the root directory of the module of the current directory (if it exists).
 */
 
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -62,25 +59,23 @@ modules:
 	nmod modules [dirs...]
 
 modules prints the modules of the dirs if they're supplied. Dirs may be supplied
-as space separated arguments or as STDIN. If no dirs are supplied, modules
-prints the module of the current directory (if it exists) and all modules in
-directories recursively below the current directory.
+as space separated arguments. If no dirs are supplied, modules prints the module
+of the current directory (if it exists) and all modules in directories
+recursively below the current directory.
 
 rootdirs:
 	mmod rootdirs [modules...]
 
 rootdirs prints the root directories of the given modules. Modules may be
-supplied as space separated arguments or as STDIN. If no modules are supplied,
-rootdirs prints the root directory of the module of the current directory (if
-it exists).
+supplied as space separated arguments. If no modules are supplied, rootdirs
+prints the root directory of the module of the current directory (if it exists).
 
 dirs:
 	mmod dirs [modules...]
 
 dirs prints the directories belonging to the given modules. Modules may be
-supplied as space separated arguments or as STDIN. If no modules are supplied,
-dirs prints the root directory of the module of the current directory (if
-it exists).
+supplied as space separated arguments. If no modules are supplied, dirs prints
+the root directory of the module of the current directory (if it exists).
 `)
 	os.Exit(2)
 }
@@ -103,11 +98,11 @@ func main() {
 func nmod(cmd string, args []string) error {
 	switch cmd {
 	case "modules":
-		return errors.New("modules unimplemented")
+		return modules(args)
 	case "rootdirs":
-		return errors.New("dir unimplemented")
+		return rootdirs(args)
 	case "dirs":
-		return errors.New("dirs unimplemented")
+		return dirs(args)
 	case "help":
 		usage()
 	default:
@@ -117,6 +112,14 @@ func nmod(cmd string, args []string) error {
 	return nil
 }
 
-func modules() {
+func modules(args []string) error {
+	return nil
+}
 
+func rootdirs(args []string) error {
+	return nil
+}
+
+func dirs(args []string) error {
+	return nil
 }
