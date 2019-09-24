@@ -71,14 +71,17 @@ rootdirs:
 
 rootdirs prints the root directories of the given modules. Modules may be
 supplied as space separated arguments. If no modules are supplied, rootdirs
-of the current directory (if it exists) and all modules in directories
-recursively below the current directory.
+prints the root directories of the current directory (if it exists) and all
+modules in directories recursively below the current directory.
 
 dirs:
 	mmod dirs [modules]
 
 dirs prints the directories belonging to the given modules. Modules may be
-supplied as space separated arguments. At least one module must be supplied.
+supplied as space separated arguments. If no modules are supplied, dirs
+prints the directories belonging to the module of the current directory (if it
+exists) and the directories of all modules in directories recursively below the
+current directory.
 `)
 	os.Exit(2)
 }
@@ -228,6 +231,7 @@ func rootdirs(dirs []string) error {
 }
 
 func dirs(args []string) error {
+	// TODO(deklerk): implement
 	return nil
 }
 
@@ -255,6 +259,9 @@ func modFilesRecursivelyDown() ([]string, error) {
 // searchUpwardsForModule searches each directory above the given startDir for
 // a go.mod file. It returns the file location of the go.mod. If no go.mod is
 // found, it returns "", nil.
+//
+// TODO(deklerk): stops at the first go.mod, but really should keep going all
+// the way.
 func searchUpwardsForModule(startDir string) (string, error) {
 	var absCurDir string
 	for curDir := startDir; absCurDir != "/"; curDir += "/.." {
