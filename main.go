@@ -1,5 +1,5 @@
 /*
-nmod provides support for operations on submodules.
+nmod provides support for operations on nested modules.
 
 Usage: nmod <command> [args...]
 
