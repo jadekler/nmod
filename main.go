@@ -25,14 +25,14 @@ rootdirs:
 
 rootdirs prints the root directories of the given modules. Modules may be
 supplied as space separated arguments. If no modules are supplied, rootdirs
-prints the root directory of the module of the current directory (if it exists).
+of the current directory (if it exists) and all modules in directories
+recursively below the current directory.
 
 dirs:
-	mmod dirs [modules...]
+	mmod dirs [modules]
 
 dirs prints the directories belonging to the given modules. Modules may be
-supplied as space separated arguments. If no modules are supplied, dirs prints
-the root directory of the module of the current directory (if it exists).
+supplied as space separated arguments. At least one module must be supplied.
 */
 
 package main
@@ -71,14 +71,14 @@ rootdirs:
 
 rootdirs prints the root directories of the given modules. Modules may be
 supplied as space separated arguments. If no modules are supplied, rootdirs
-prints the root directory of the module of the current directory (if it exists).
+of the current directory (if it exists) and all modules in directories
+recursively below the current directory.
 
 dirs:
-	mmod dirs [modules...]
+	mmod dirs [modules]
 
 dirs prints the directories belonging to the given modules. Modules may be
-supplied as space separated arguments. If no modules are supplied, dirs prints
-the root directory of the module of the current directory (if it exists).
+supplied as space separated arguments. At least one module must be supplied.
 `)
 	os.Exit(2)
 }
@@ -101,16 +101,64 @@ func main() {
 func nmod(cmd string, args []string) error {
 	switch cmd {
 	case "modules":
-		if len(args) == 0 {
-			return allModules()
+		dirs := args
+		if len(dirs) == 0 {
+			// Look up and down for modfiles.
+			modFiles, err := modFilesRecursivelyDown()
+			if err != nil {
+				return err
+			}
+			upwardsModFile, err := searchUpwardsForModule(".")
+			if err != nil {
+				return err
+			}
+			if upwardsModFile != "" {
+				modFiles = append(modFiles, upwardsModFile)
+			}
+
+			// Aggregate the dirs of the modfiles.
+			for _, modFile := range modFiles {
+				dirs = append(dirs, filepath.Dir(modFile))
+			}
 		}
-		return modules(args)
-	case "rootdirs":
-		return rootdirs(args)
-	case "dirs":
-		return dirs(args)
+		return modules(dirs)
 	case "help":
 		usage()
+	default:
+	}
+
+	// For both "dirs" and "rootdirs", we need to calculate modules:
+
+	mods := args
+	if len(mods) == 0 {
+		// Look up and down for modfiles.
+		modFiles, err := modFilesRecursivelyDown()
+		if err != nil {
+			return err
+		}
+		upwardsModFile, err := searchUpwardsForModule(".")
+		if err != nil {
+			return err
+		}
+		if upwardsModFile != "" {
+			modFiles = append(modFiles, upwardsModFile)
+		}
+
+		// Aggregate the modules of the modfiles.
+		for _, modFile := range modFiles {
+			module, err := readModule(modFile)
+			if err != nil {
+				return err
+			}
+			mods = append(mods, module)
+		}
+	}
+
+	switch cmd {
+	case "rootdirs":
+		return rootdirs(mods)
+	case "dirs":
+		return dirs(mods)
 	default:
 		usage()
 	}
@@ -121,6 +169,7 @@ func nmod(cmd string, args []string) error {
 func modules(dirs []string) error {
 	modFiles := map[string]struct{}{}
 
+	// First, look upwards for the modfile of each dir.
 	for _, d := range dirs {
 		// Pessimistically assume user didn't provide an absolute path - convert
 		// every path into an absolute path.
@@ -141,6 +190,7 @@ func modules(dirs []string) error {
 		modFiles[m] = struct{}{}
 	}
 
+	// Next, read each modfile and record its module.
 	modules := map[string]struct{}{}
 	for f := range modFiles {
 		m, err := readModule(f)
@@ -150,6 +200,7 @@ func modules(dirs []string) error {
 		modules[m] = struct{}{}
 	}
 
+	// Finally, print each module.
 	for m := range modules {
 		fmt.Println(m)
 	}
@@ -157,49 +208,53 @@ func modules(dirs []string) error {
 	return nil
 }
 
-func allModules() error {
+func rootdirs(dirs []string) error {
+	// Gather (and de-dupe) all the go.mod files.
 	modFiles := map[string]struct{}{}
-
-	// Go up until we see a go.mod.
-	m, err := searchUpwardsForModule(".")
-	if err != nil {
-		return err
-	}
-	if m != "" {
-		modFiles[m] = struct{}{}
+	for _, d := range dirs {
+		modFile, err := searchUpwardsForModule(d)
+		if err != nil {
+			return err
+		}
+		modFiles[modFile] = struct{}{}
 	}
 
-	// Now go recursively down collecting go.mod files.
+	// Report the modfile directories.
+	for modFile := range modFiles {
+		fmt.Println(filepath.Dir(modFile))
+	}
+
+	return nil
+}
+
+func dirs(args []string) error {
+	return nil
+}
+
+func modFilesRecursivelyDown() ([]string, error) {
+	var modFiles []string
+	dedupedModFiles := map[string]struct{}{}
 	if err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.Name() == "go.mod" {
-			modFiles[path] = struct{}{}
+			dedupedModFiles[path] = struct{}{}
 		}
 		return nil
 	}); err != nil {
-		return err
+		return modFiles, err
 	}
 
-	modules := map[string]struct{}{}
-	for f := range modFiles {
-		m, err := readModule(f)
-		if err != nil {
-			return err
-		}
-		modules[m] = struct{}{}
+	for modFile := range dedupedModFiles {
+		modFiles = append(modFiles, modFile)
 	}
-
-	for m := range modules {
-		fmt.Println(m)
-	}
-
-	return nil
+	return modFiles, nil
 }
 
 // searchUpwardsForModule searches each directory above the given startDir for
-// a go.mod file. It returns the file location of the go.mod.
+// a go.mod file. It returns the file location of the go.mod. If no go.mod is
+// found, it returns "", nil.
 func searchUpwardsForModule(startDir string) (string, error) {
 	var absCurDir string
 	for curDir := startDir; absCurDir != "/"; curDir += "/.." {
@@ -234,12 +289,4 @@ func readModule(f string) (string, error) {
 		return "", fmt.Errorf("%s doesn't seem to have a module declaration", f)
 	}
 	return matches[0][1], nil
-}
-
-func rootdirs(args []string) error {
-	return nil
-}
-
-func dirs(args []string) error {
-	return nil
 }
