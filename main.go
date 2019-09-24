@@ -34,7 +34,6 @@ dirs:
 dirs prints the directories belonging to the given modules. Modules may be
 supplied as space separated arguments. At least one module must be supplied.
 */
-
 package main
 
 import (
