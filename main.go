@@ -40,7 +40,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"regexp"
 )
 
 func usage() {
@@ -112,7 +115,60 @@ func nmod(cmd string, args []string) error {
 	return nil
 }
 
+var moduleRegexp = regexp.MustCompile("module (.+)")
+
 func modules(args []string) error {
+	var modFiles []string
+
+	// Go up until we see a go.mod.
+	var d string
+	for cur := "."; d != "/"; cur += "/.." {
+		var err error
+		d, err = filepath.Abs(cur)
+		if err != nil {
+			return err
+		}
+		modFile := d + "/go.mod"
+		_, err = os.Stat(modFile)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err
+		}
+		modFiles = append(modFiles, modFile)
+	}
+
+	// Now go recursively down collecting go.mod files.
+	if err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() == "go.mod" {
+			modFiles = append(modFiles, path)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	dedupedMatches := map[string]struct{}{}
+	for _, f := range modFiles {
+		outbytes, err := ioutil.ReadFile(f)
+		if err != nil {
+			return err
+		}
+		matches := moduleRegexp.FindAllStringSubmatch(string(outbytes), -1)
+		if len(matches) == 0 {
+			return fmt.Errorf("%s doesn't seem to have a module declaration", f)
+		}
+		dedupedMatches[matches[0][1]] = struct{}{}
+	}
+
+	for m := range dedupedMatches {
+		fmt.Println(m)
+	}
+
 	return nil
 }
 
